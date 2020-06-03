@@ -55,8 +55,6 @@ def google():
 
 @bp.route('/google_callback')
 def google_callback():
-    os.environ['OAUTHLIB_INSECURE_TRANSPORT'] = '1'
-
     state = session['state']
     account = session['google_account']
 

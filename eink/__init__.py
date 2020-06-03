@@ -4,6 +4,9 @@ from flask import Flask
 
 
 def create_app():
+    if os.environ['FLASK_ENV'] == 'development':
+        os.environ['OAUTHLIB_INSECURE_TRANSPORT'] = '1'
+
     # create and configure the app
     app = Flask(__name__, instance_relative_config=True)
     app.config.from_mapping(
