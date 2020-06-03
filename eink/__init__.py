@@ -23,6 +23,9 @@ def create_app():
     from . import api
     app.register_blueprint(api.bp)
 
+    from . import auth
+    app.register_blueprint(auth.bp)
+
     return app
 
 

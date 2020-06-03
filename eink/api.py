@@ -6,11 +6,18 @@ bp = Blueprint('api', __name__, url_prefix='/api')
 
 @bp.before_request
 def before_request():
-    if request.args.get('token', '') != current_app.config['EINK_TOKEN']:
+    if request.path not in ['/api/status'] and request.args.get('token', '') != current_app.config['EINK_TOKEN']:
         return {
             'status': 'fail',
             'reason': 'Miss EINK Token'
-        }
+        }, 403
+
+
+@bp.route('/status')
+def status():
+    return {
+        'status': 'success'
+    }
 
 
 @bp.route('/weather')
@@ -36,7 +43,7 @@ def weather():
         results = {
             'status': 'fail',
             'reason': 'HTTP Request Returns ' + str(r.status_code)
-        }
+        }, r.status_code
 
     return results
 
@@ -63,6 +70,15 @@ def habitica():
         results = {
             'status': 'fail',
             'reason': 'HTTP Request Returns ' + str(r.status_code)
-        }
+        }, r.status_code
 
     return results
+
+
+@bp.route('/calendar')
+def calendar():
+    scopes = ['https://www.googleapis.com/auth/calendar.readonly']
+
+    events = []
+
+    return ''
