@@ -4,7 +4,7 @@ from flask import Flask
 
 
 def create_app():
-    if os.environ['FLASK_ENV'] == 'development':
+    if 'FLASK_ENV' in os.environ and os.environ['FLASK_ENV'] == 'development':
         os.environ['OAUTHLIB_INSECURE_TRANSPORT'] = '1'
 
     # create and configure the app
