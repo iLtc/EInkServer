@@ -1,5 +1,11 @@
 from flask import Blueprint, current_app, request
 import requests
+import os
+import pickle
+from google.auth.transport.requests import Request
+import googleapiclient.discovery
+import datetime
+from pytz import timezone
 
 bp = Blueprint('api', __name__, url_prefix='/api')
 
@@ -77,8 +83,52 @@ def habitica():
 
 @bp.route('/calendar')
 def calendar():
-    scopes = ['https://www.googleapis.com/auth/calendar.readonly']
-
     events = []
+    eastern = timezone('US/Eastern')
+    now = datetime.datetime.now(eastern)
 
-    return ''
+    for account, calendars in current_app.config['GOOGLE_CALENDARID_WITH_CREDENTIALS'].items():
+        creds = None
+
+        pickle_name = '{}/{}.pickle'.format(current_app.instance_path, account)
+
+        if os.path.exists(pickle_name):
+            with open(pickle_name, 'rb') as token:
+                creds = pickle.load(token)
+
+        if not creds or not creds.valid:
+            if creds and creds.expired and creds.refresh_token:
+                creds.refresh(Request())
+
+                with open(pickle_name, 'wb') as token:
+                    pickle.dump(creds, token)
+
+            else:
+                return {
+                    'status': 'failed',
+                    'reason': '{} needs to be authenticated!'.format(account)
+                }, 403
+
+        calendar_service = googleapiclient.discovery.build('calendar', 'v3', credentials=creds)
+
+        for name, calendar_data in calendars.items():
+            data = calendar_service.events().list(
+                calendarId=calendar_data['id'],
+                orderBy='startTime',
+                singleEvents=True,
+                timeMin=now.isoformat(),
+                timeMax=(now + datetime.timedelta(days=1)).isoformat()
+            ).execute()
+
+            for event in data['items']:
+                event['calendar'] = name
+                event['important'] = calendar_data['important']
+
+                events.append(event)
+
+    events.sort(key=lambda e: e['start']['dateTime'])
+
+    return {
+        'status': 'success',
+        'events': events
+    }
