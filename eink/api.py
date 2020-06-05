@@ -5,14 +5,20 @@ import pickle
 from google.auth.transport.requests import Request
 import googleapiclient.discovery
 import datetime
-from pytz import timezone
+from pytz import timezone, utc
+from .models import db, Task
+import json
 
 bp = Blueprint('api', __name__, url_prefix='/api')
+
+eastern = timezone('US/Eastern')
 
 
 @bp.before_request
 def before_request():
-    if request.path not in ['/api/status'] and request.args.get('token', '') != current_app.config['EINK_TOKEN']:
+    if (current_app.config['ENV'] != 'development'
+            and request.path not in ['/api/status']
+            and request.args.get('token', '') != current_app.config['EINK_TOKEN']):
         return {
             'status': 'fail',
             'reason': 'Miss EINK Token'
@@ -84,7 +90,6 @@ def habitica():
 @bp.route('/calendar')
 def calendar():
     events = []
-    eastern = timezone('US/Eastern')
     now = datetime.datetime.now(eastern)
 
     for account, calendars in current_app.config['GOOGLE_CALENDARID_WITH_CREDENTIALS'].items():
@@ -132,3 +137,42 @@ def calendar():
         'status': 'success',
         'events': events
     }
+
+
+@bp.route('/omnifocus/update')
+def omnifocus_update():
+    data = request.args.get('data', '')
+
+    if data == '':
+        return {
+                   'status': 'failed',
+                   'reason': 'Miss data'
+               }, 400
+
+    try:
+        data = json.loads(data)
+    except:
+        return {
+                   'status': 'failed',
+                   'reason': 'Update to load json data'
+               }, 400
+
+    for task in data:
+        if task['dueDate']:
+            utc_time = utc.localize(datetime.datetime.strptime(task['dueDate'], '%Y-%m-%dT%H:%M:%S.%fZ'))
+            task['dueDate'] = utc_time.astimezone(eastern)
+
+        obj = Task.query.filter_by(task_id=task['task_id']).first()
+
+        if obj:
+            for key, val in task.items():
+                if getattr(obj, key) != val:
+                    setattr(obj, key, val)
+        else:
+            new_obj = Task(**task)
+
+            db.session.add(new_obj)
+
+    db.session.commit()
+
+    return {'status': 'success'}
