@@ -20,9 +20,9 @@ def before_request():
             and request.path not in ['/api/status']
             and request.args.get('token', '') != current_app.config['EINK_TOKEN']):
         return {
-            'status': 'fail',
-            'reason': 'Miss EINK Token'
-        }, 403
+                   'status': 'fail',
+                   'reason': 'Miss EINK Token'
+               }, 403
 
 
 @bp.route('/status')
@@ -53,9 +53,9 @@ def weather():
 
     else:
         results = {
-            'status': 'fail',
-            'reason': 'HTTP Request Returns ' + str(r.status_code)
-        }, r.status_code
+                      'status': 'fail',
+                      'reason': 'HTTP Request Returns ' + str(r.status_code)
+                  }, r.status_code
 
     return results
 
@@ -80,9 +80,9 @@ def habitica():
 
     else:
         results = {
-            'status': 'fail',
-            'reason': 'HTTP Request Returns ' + str(r.status_code)
-        }, r.status_code
+                      'status': 'fail',
+                      'reason': 'HTTP Request Returns ' + str(r.status_code)
+                  }, r.status_code
 
     return results
 
@@ -110,9 +110,9 @@ def calendar():
 
             else:
                 return {
-                    'status': 'failed',
-                    'reason': '{} needs to be authenticated!'.format(account)
-                }, 403
+                           'status': 'failed',
+                           'reason': '{} needs to be authenticated!'.format(account)
+                       }, 403
 
         calendar_service = googleapiclient.discovery.build('calendar', 'v3', credentials=creds)
 
@@ -159,8 +159,7 @@ def omnifocus_update():
 
     for task in data:
         if task['dueDate']:
-            utc_time = utc.localize(datetime.datetime.strptime(task['dueDate'], '%Y-%m-%dT%H:%M:%S.%fZ'))
-            task['dueDate'] = utc_time.astimezone(eastern)
+            task['dueDate'] = utc.localize(datetime.datetime.strptime(task['dueDate'], '%Y-%m-%dT%H:%M:%S.%fZ'))
 
         obj = Task.query.filter_by(task_id=task['task_id']).first()
 
@@ -176,3 +175,23 @@ def omnifocus_update():
     db.session.commit()
 
     return {'status': 'success'}
+
+
+@bp.route('/omnifocus')
+def omnifocus():
+    now = datetime.datetime.now(eastern)
+    today = datetime.datetime(now.year, now.month, now.day, 23, 59, 59, tzinfo=eastern)
+
+    tasks = Task.query \
+        .filter(Task.active == True, Task.completed == False, Task.taskStatus != 'Completed') \
+        .filter(db.or_(Task.flagged == True, Task.inInbox == True, Task.dueDate <= today)).all()
+
+    results = []
+
+    for task in tasks:
+        results.append(task.to_dict())
+
+    return {
+        'status': 'success',
+        'tasks': results
+    }

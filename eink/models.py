@@ -19,3 +19,19 @@ class Task(db.Model):
     inInbox = db.Column(db.Boolean)
     note = db.Column(db.Text)
     taskStatus = db.Column(db.String(15))
+
+    def to_dict(self):
+        return {
+            'id': self.id,
+            'task_id': self.task_id,
+            'name': self.name,
+            'active': self.active,
+            'completed': self.completed,
+            'containingProjectName': self.containingProjectName,
+            'dueDate': self.dueDate.isoformat() if self.dueDate else None,
+            'estimatedMinutes': self.estimatedMinutes,
+            'flagged': self.flagged,
+            'inInbox': self.inInbox,
+            'note': self.note,
+            'taskStatus': self.taskStatus,
+        }
