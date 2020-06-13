@@ -8,6 +8,7 @@ import datetime
 from pytz import timezone, utc
 from .models import db, Task
 import json
+from . import generator
 
 bp = Blueprint('api', __name__, url_prefix='/api')
 
@@ -218,5 +219,7 @@ def refresh():
                 'status': 'failed',
                 'reason': 'Failed to get data from {}: {}'.format(point['name'], data[point['name']][0]['reason'])
             }
+
+    generator.generator(data, current_app.root_path + '/')
 
     return '123'
