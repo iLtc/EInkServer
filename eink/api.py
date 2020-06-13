@@ -157,6 +157,8 @@ def omnifocus_update():
                    'reason': 'Update to load json data'
                }, 400
 
+    # TODO: Remove deleted tasks
+
     for task in data:
         if task['dueDate']:
             task['dueDate'] = utc.localize(datetime.datetime.strptime(task['dueDate'], '%Y-%m-%dT%H:%M:%S.%fZ'))
@@ -195,3 +197,26 @@ def omnifocus():
         'status': 'success',
         'tasks': results
     }
+
+
+@bp.route('/refresh')
+def refresh():
+    data_points = [
+        {'name': 'weather', 'method': weather},
+        {'name': 'habitica', 'method': habitica},
+        {'name': 'calendar', 'method': calendar},
+        {'name': 'omnifocus', 'method': omnifocus}
+    ]
+
+    data = {}
+
+    for point in data_points:
+        data[point['name']] = point['method']()
+
+        if type(data[point['name']]) == tuple:
+            return {
+                'status': 'failed',
+                'reason': 'Failed to get data from {}: {}'.format(point['name'], data[point['name']][0]['reason'])
+            }
+
+    return '123'
