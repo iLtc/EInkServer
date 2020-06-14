@@ -28,7 +28,7 @@ class Task(db.Model):
             'active': self.active,
             'completed': self.completed,
             'containingProjectName': self.containingProjectName,
-            'dueDate': self.dueDate.isoformat() if self.dueDate else None,
+            'dueDate': self.dueDate.isoformat() if self.dueDate else '',
             'estimatedMinutes': self.estimatedMinutes,
             'flagged': self.flagged,
             'inInbox': self.inInbox,
