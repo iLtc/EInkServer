@@ -240,4 +240,4 @@ def refresh():
 @bp.route('/red.bmp')
 @bp.route('/debug.bmp')
 def static():
-    return send_file(request.path[1:])
+    return send_file(request.path.split('/')[2])
