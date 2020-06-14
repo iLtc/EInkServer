@@ -6,7 +6,7 @@ from pytz import timezone, utc
 EPD_WIDTH = 800
 EPD_HEIGHT = 480
 
-SIDEBAR_WIDTH = 300
+SIDEBAR_WIDTH = 270
 
 eastern = timezone('US/Eastern')
 
@@ -170,7 +170,168 @@ def sidebar(weather_data, width, height):
         status_text,
         font=font_status, fill=255)
 
-    debug(red_layer, black_layer, show=True)
+    return red_layer, black_layer
+
+
+def calendar_prepare(events):
+    now = datetime.datetime.now(eastern)
+    items = []
+
+    for event in events:
+        start = datetime.datetime.strptime(event['start']['dateTime'], '%Y-%m-%dT%H:%M:%S%z')
+        end = datetime.datetime.strptime(event['end']['dateTime'], '%Y-%m-%dT%H:%M:%S%z')
+
+        items.append({
+            'left': '[{}-{}]'.format(start.strftime('%I:%M'), end.strftime('%I:%M')),
+            'left_red': True if start <= (now + datetime.timedelta(hours=3)) else False,
+            'main': event['summary'] if now < start else '>>> {} <<<'.format(event['summary']),
+            'main_red': True if now >= start else False,
+            'right': '[{}]'.format(event['calendar']),
+            'right_red': False,
+            'type': 'calendar'
+        })
+
+    return items
+
+
+def task_prepare(tasks):
+    now = datetime.datetime.now(eastern)
+    today = datetime.datetime(now.year, now.month, now.day, 23, 59, 59, tzinfo=eastern)
+    yesterday = today - datetime.timedelta(days=1)
+
+    items = []
+
+    for task in tasks:
+        due = None if task['dueDate'] == '' else datetime.datetime.fromisoformat(task['dueDate']+'+00:00').astimezone(eastern)
+
+        if due is None:
+            left_string = ''
+            left_red = False
+        elif due <= yesterday:
+            left_string = '[{}]'.format(due.strftime('%m/%d'))
+            left_red = True
+        elif due <= now:
+            left_string = '[{}]'.format(due.strftime('%I:%M'))
+            left_red = True
+        elif due <= today:
+            left_string = '[{}]'.format(due.strftime('%I:%M'))
+            left_red = False
+        else:
+            left_string = '[{}]'.format(due.strftime('%m/%d'))
+            left_red = False
+
+        items.append({
+            'left': left_string,
+            'left_red': left_red,
+            'main': task['name'],
+            'main_red': False,
+            'right': '[{}]'.format('Inbox' if task['inInbox'] else task['containingProjectName']),
+            'right_red': False,
+            'type': 'task'
+        })
+
+    return items
+
+
+def habitica_prepare(tasks):
+    now = datetime.datetime.now(eastern)
+    items = []
+
+    for task in tasks:
+        if task['type'] != 'daily' or not task['isDue'] or task['completed']:
+            continue
+
+        items.append({
+            'left': now.strftime('%m/%d'),
+            'left_red': False,
+            'main': task['text'],
+            'main_red': False,
+            'right': '[Habitica]',
+            'right_red': False,
+            'type': 'habitica'
+        })
+
+    return items
+
+
+def main_content(data, width, height):
+    items = calendar_prepare(data['calendar']['events'])
+    items += task_prepare(data['omnifocus']['tasks'])
+    items += habitica_prepare(data['habitica']['data'])
+
+    red_layer = Image.new('1', (width, height), 1)
+    black_layer = Image.new('1', (width, height), 1)
+
+    red_layer_draw = ImageDraw.Draw(red_layer)
+    black_layer_draw = ImageDraw.Draw(black_layer)
+
+    font = ImageFont.truetype(root_path + 'fonts/Roboto-Light.ttf', 17)
+    h_offset = -8
+
+    for i in range(len(items)):
+        item = items[i]
+
+        mw, h = font.getsize(item['main'])
+        y = h / 2 + h_offset
+
+        lw, _ = font.getsize(item['left'])
+        lx = 1
+
+        rw, _ = font.getsize(item['right'])
+        rx = width - rw
+
+        space = (3 if lw > 0 else 0) + (3 if rw > 0 else 0)
+
+        while width - lw - rw - space < mw:
+            item['main'] = item['main'][:-4] + '...'
+            mw, _ = font.getsize(item['main'])
+
+        if 'main_x' not in item:
+            if lw > 0:
+                mx = lw + 5
+            else:
+                mx = 1
+        else:
+            mx = item['main_x']
+
+        if item['left_red']:
+            red_layer_draw.text((lx, y), item['left'], font=font, fill=0)
+        else:
+            black_layer_draw.text((lx, y), item['left'], font=font, fill=0)
+
+        if item['main_red']:
+            red_layer_draw.text((mx, y), item['main'], font=font, fill=0)
+        else:
+            black_layer_draw.text((mx, y), item['main'], font=font, fill=0)
+
+        if item['right_red']:
+            red_layer_draw.text((rx, y), item['right'], font=font, fill=0)
+        else:
+            black_layer_draw.text((rx, y), item['right'], font=font, fill=0)
+
+        h_offset += 32
+
+        if height - h_offset > h:
+            if i < len(items) - 1:
+                if item['type'] != items[i + 1]['type']:
+                    black_layer_draw.line((0, h_offset, width, h_offset), 0, 3)
+                else:
+                    black_layer_draw.line((0, h_offset, width, h_offset), 0, 1)
+
+        h_offset += -6
+
+        if h_offset + 2.5 * h >= height and len(items) - i > 1:
+            text = 'And {} more ...'.format(len(items) - i)
+
+            w, h = font.getsize(text)
+            x = width / 2 - w / 2
+            y = (height - h_offset) / 2 + h_offset - h / 2
+
+            red_layer_draw.text((x, y), text, font=font, fill=0)
+
+            break
+
+    return red_layer, black_layer
 
 
 def debug(red_image, black_image, save=False, show=False):
@@ -193,10 +354,25 @@ def debug(red_image, black_image, save=False, show=False):
 def generator(data, path=''):
     global root_path
     root_path = path
-    sidebar(data['weather'], SIDEBAR_WIDTH, EPD_HEIGHT)
+
+    red_layer = Image.new('1', (EPD_WIDTH, EPD_HEIGHT), 1)
+    black_layer = Image.new('1', (EPD_WIDTH, EPD_HEIGHT), 1)
+
+    red_card, black_card = sidebar(data['weather'], SIDEBAR_WIDTH, EPD_HEIGHT)
+    red_layer.paste(red_card, (0, 0))
+    black_layer.paste(black_card, (0, 0))
+
+    red_card, black_card = main_content(data, EPD_WIDTH - SIDEBAR_WIDTH, EPD_HEIGHT)
+    red_layer.paste(red_card, (SIDEBAR_WIDTH, 0))
+    black_layer.paste(black_card, (SIDEBAR_WIDTH, 0))
+
+    black_layer.save(root_path + 'black.bmp')
+    red_layer.save(root_path + 'red.bmp')
+    debug(red_layer, black_layer, save=True)
+
+    return True
 
 
 if __name__ == '__main__':
-    data = {}
-
+    data = {***REMOVED***}
     generator(data)

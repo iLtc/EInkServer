@@ -9,6 +9,7 @@ from pytz import timezone, utc
 from .models import db, Task
 import json
 from . import generator
+import sys
 
 bp = Blueprint('api', __name__, url_prefix='/api')
 
@@ -194,6 +195,8 @@ def omnifocus():
     for task in tasks:
         results.append(task.to_dict())
 
+    results.sort(key=lambda e: e['dueDate'])
+
     return {
         'status': 'success',
         'tasks': results
@@ -216,10 +219,18 @@ def refresh():
 
         if type(data[point['name']]) == tuple:
             return {
-                'status': 'failed',
-                'reason': 'Failed to get data from {}: {}'.format(point['name'], data[point['name']][0]['reason'])
-            }
+                       'status': 'failed',
+                       'reason': 'Failed to get data from {}: {}'.format(point['name'], data[point['name']][0]['reason'])
+                   }, 500
 
-    generator.generator(data, current_app.root_path + '/')
+    try:
+        generator.generator(data, current_app.root_path + '/')
+    except:
+        return {
+                   'status': 'failed',
+                   'reason': 'Failed to refresh: ' + str(sys.exc_info()[0])
+               }, 500
 
-    return '123'
+    return {
+        'status': 'success'
+    }
