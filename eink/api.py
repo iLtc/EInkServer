@@ -1,4 +1,4 @@
-from flask import Blueprint, current_app, request
+from flask import Blueprint, current_app, request, send_file
 import requests
 import os
 import pickle
@@ -234,3 +234,10 @@ def refresh():
     return {
         'status': 'success'
     }
+
+
+@bp.route('/black.bmp')
+@bp.route('/red.bmp')
+@bp.route('/debug.bmp')
+def static():
+    return send_file(request.path[1:])
