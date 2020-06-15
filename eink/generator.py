@@ -374,5 +374,5 @@ def generator(data, path=''):
 
 
 if __name__ == '__main__':
-    data = {***REMOVED***}
+    data = {}
     generator(data)
