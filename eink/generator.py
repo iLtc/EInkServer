@@ -178,8 +178,8 @@ def calendar_prepare(events):
     items = []
 
     for event in events:
-        start = datetime.datetime.strptime(event['start']['dateTime'], '%Y-%m-%dT%H:%M:%S%z')
-        end = datetime.datetime.strptime(event['end']['dateTime'], '%Y-%m-%dT%H:%M:%S%z')
+        start = datetime.datetime.strptime(event['start']['dateTime'].replace('-04:00','-0400'), '%Y-%m-%dT%H:%M:%S%z')
+        end = datetime.datetime.strptime(event['end']['dateTime'].replace('-04:00','-0400'), '%Y-%m-%dT%H:%M:%S%z')
 
         items.append({
             'left': '[{}-{}]'.format(start.strftime('%I:%M'), end.strftime('%I:%M')),
@@ -202,7 +202,7 @@ def task_prepare(tasks):
     items = []
 
     for task in tasks:
-        due = None if task['dueDate'] == '' else datetime.datetime.fromisoformat(task['dueDate']+'+00:00').astimezone(eastern)
+        due = None if task['dueDate'] == '' else datetime.datetime.strptime(task['dueDate']+'-0400', '%Y-%m-%dT%H:%M:%S%z')
 
         if due is None:
             left_string = ''
