@@ -184,7 +184,7 @@ def omnifocus_update():
 @bp.route('/omnifocus')
 def omnifocus():
     now = datetime.datetime.now(eastern)
-    today = datetime.datetime(now.year, now.month, now.day, 23, 59, 59, tzinfo=eastern)
+    today = eastern.localize(datetime.datetime(now.year, now.month, now.day, 23, 59, 59)).astimezone(utc)
 
     tasks = Task.query \
         .filter(Task.active == True, Task.completed == False, Task.taskStatus != 'Completed') \
@@ -228,7 +228,7 @@ def refresh():
     except:
         return {
                    'status': 'failed',
-                   'reason': 'Failed to refresh: ' + str(sys.exc_info()[0])
+                   'reason': 'Failed to refresh: ' + str(sys.exc_info()[1])
                }, 500
 
     return {
