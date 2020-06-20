@@ -201,7 +201,7 @@ def trello_prepare(cards):
         items.append({
             'left': '[{}]'.format(card['list_name']),
             'left_red': False,
-            'main': card['name'],
+            'main': '{} ({})'.format(card['name'], card['progress']),
             'main_red': False,
             'right': '[{}]'.format(card['board_name']),
             'right_red': False,
@@ -338,7 +338,7 @@ def main_content(data, width, height):
 
         h_offset += -6
 
-        if h_offset + 2.5 * h >= height and len(items) - i > 1:
+        if h_offset + 1.5 * h >= height and len(items) - i > 1:
             text = 'And {} more ...'.format(len(items) - i)
 
             w, h = font.getsize(text)
