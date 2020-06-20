@@ -215,7 +215,40 @@ def omnifocus():
 
 @bp.route('/trello')
 def trello():
-    pass
+    cards = []
+
+    for board_name, lists in current_app.config['TRELLO_LISTS'].items():
+        for list_name, list_id in lists.items():
+            r = requests.get(
+                'https://api.trello.com/1/lists/{}/cards?key={}&token={}'.format(
+                    list_id,
+                    current_app.config['TRELLO_KEY'],
+                    current_app.config['TRELLO_TOKEN']
+                )
+            )
+
+            if r.status_code != requests.codes.ok:
+                return {
+                           'status': 'fail',
+                           'reason': 'HTTP Request Returns ' + str(r.status_code)
+                       }, r.status_code
+
+            else:
+                data = r.json()
+
+                for item in data:
+                    print(item)
+                    cards.append({
+                        'name': item['name'],
+                        'progress': '{}/{}'.format(item['badges']['checkItemsChecked'], item['badges']['checkItems']),
+                        'list_name': list_name,
+                        'board_name': board_name
+                    })
+
+    return {
+        'status': 'success',
+        'cards': cards
+    }
 
 
 @bp.route('/refresh')
@@ -235,7 +268,8 @@ def refresh():
         if type(data[point['name']]) == tuple:
             return {
                        'status': 'failed',
-                       'reason': 'Failed to get data from {}: {}'.format(point['name'], data[point['name']][0]['reason'])
+                       'reason': 'Failed to get data from {}: {}'.format(point['name'],
+                                                                         data[point['name']][0]['reason'])
                    }, 500
 
     try:
