@@ -73,11 +73,18 @@ def habitica():
     )
 
     if r.status_code == requests.codes.ok:
-        data = r.json()
+        old_data = r.json()['data']
+
+        data = [{
+            'type': temp['type'],
+            'isDue': temp['isDue'],
+            'completed': temp['completed'],
+            'text': temp['text']
+        } for temp in old_data if temp['type'] == 'daily']
 
         results = {
             'status': 'success',
-            'data': data['data']
+            'data': data
         }
 
     else:
@@ -127,11 +134,14 @@ def calendar():
                 timeMax=(now + datetime.timedelta(days=1)).isoformat()
             ).execute()
 
-            for event in data['items']:
-                event['calendar'] = name
-                event['important'] = calendar_data['important']
-
-                events.append(event)
+            for temp in data['items']:
+                events.append({
+                    'calendar': name,
+                    'important': calendar_data['important'],
+                    'start': temp['start'],
+                    'end': temp['end'],
+                    'summary': temp['summary']
+                })
 
     events.sort(key=lambda e: e['start']['dateTime'])
 
@@ -201,6 +211,11 @@ def omnifocus():
         'status': 'success',
         'tasks': results
     }
+
+
+@bp.route('/trello')
+def trello():
+    pass
 
 
 @bp.route('/refresh')
