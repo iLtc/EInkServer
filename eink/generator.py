@@ -150,7 +150,7 @@ def sidebar(weather_data, width, height):
             tomorrow['weather'][0]['icon'],
             tomorrow['weather'][0]['description'].title(),
             '{} °F / {} °F'.format(round(tomorrow['temp']['min']), round(tomorrow['temp']['max'])),
-            'Today',
+            'Tomorrow',
             width,
             120
         )
