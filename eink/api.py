@@ -237,7 +237,6 @@ def trello():
                 data = r.json()
 
                 for item in data:
-                    print(item)
                     cards.append({
                         'name': item['name'],
                         'progress': '{}/{}'.format(item['badges']['checkItemsChecked'], item['badges']['checkItems']),
@@ -257,7 +256,8 @@ def refresh():
         {'name': 'weather', 'method': weather},
         {'name': 'habitica', 'method': habitica},
         {'name': 'calendar', 'method': calendar},
-        {'name': 'omnifocus', 'method': omnifocus}
+        {'name': 'omnifocus', 'method': omnifocus},
+        {'name': 'trello', 'method': trello}
     ]
 
     data = {}

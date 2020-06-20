@@ -194,6 +194,23 @@ def calendar_prepare(events):
     return items
 
 
+def trello_prepare(cards):
+    items = []
+
+    for card in cards:
+        items.append({
+            'left': '[{}]'.format(card['list_name']),
+            'left_red': False,
+            'main': card['name'],
+            'main_red': False,
+            'right': '[{}]'.format(card['board_name']),
+            'right_red': False,
+            'type': 'trello'
+        })
+
+    return items
+
+
 def task_prepare(tasks):
     now = datetime.datetime.now(eastern)
     today = datetime.datetime(now.year, now.month, now.day, 23, 59, 59, tzinfo=eastern)
@@ -256,6 +273,7 @@ def habitica_prepare(tasks):
 
 def main_content(data, width, height):
     items = calendar_prepare(data['calendar']['events'])
+    items += trello_prepare(data['trello']['cards'])
     items += task_prepare(data['omnifocus']['tasks'])
     items += habitica_prepare(data['habitica']['data'])
 
