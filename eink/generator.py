@@ -178,8 +178,8 @@ def calendar_prepare(events):
     items = []
 
     for event in events:
-        start = datetime.datetime.strptime(event['start']['dateTime'], '%Y-%m-%dT%H:%M:%S%z')
-        end = datetime.datetime.strptime(event['end']['dateTime'], '%Y-%m-%dT%H:%M:%S%z')
+        start = datetime.datetime.strptime(event['start']['dateTime'], '%Y-%m-%dT%H:%M:%S%z').astimezone(eastern)
+        end = datetime.datetime.strptime(event['end']['dateTime'], '%Y-%m-%dT%H:%M:%S%z').astimezone(eastern)
 
         items.append({
             'left': '[{}-{}]'.format(start.strftime('%I:%M'), end.strftime('%I:%M')),
