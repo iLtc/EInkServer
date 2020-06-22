@@ -143,7 +143,7 @@ def calendar():
                     'summary': temp['summary']
                 })
 
-    events.sort(key=lambda e: e['start']['dateTime'])
+    events.sort(key=lambda e: datetime.datetime.fromisoformat(e['start']['dateTime']).astimezone(eastern))
 
     return {
         'status': 'success',
