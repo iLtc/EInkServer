@@ -315,6 +315,8 @@ def refresh():
         {'name': 'habitica', 'method': habitica},
         {'name': 'calendar', 'method': calendar},
         {'name': 'omnifocus', 'method': omnifocus},
+        {'name': 'trello', 'method': trello},
+        {'name': 'toggl', 'method': toggl}
     ]
 
     data = {}
@@ -344,6 +346,17 @@ def refresh():
 
 @bp.route('/black.bmp')
 @bp.route('/red.bmp')
-@bp.route('/debug.bmp')
 def static():
     return send_file(request.path.split('/')[2])
+
+@bp.route('/debug.bmp')
+def debug():
+    result = refresh()
+
+    if type(result) == tuple:
+        return {
+                   'status': 'failed',
+                   'reason': result[0]['reason']
+               }, result[1]
+    else:
+        return send_file('debug.bmp')
