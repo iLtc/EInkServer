@@ -315,7 +315,6 @@ def refresh():
         {'name': 'habitica', 'method': habitica},
         {'name': 'calendar', 'method': calendar},
         {'name': 'omnifocus', 'method': omnifocus},
-        {'name': 'trello', 'method': trello}
     ]
 
     data = {}

@@ -6,7 +6,8 @@ from pytz import timezone, utc
 EPD_WIDTH = 800
 EPD_HEIGHT = 480
 
-SIDEBAR_WIDTH = 270
+SIDEBAR_WIDTH = 200
+PROGRESS_WIDTH = 100
 
 eastern = timezone('US/Eastern')
 
@@ -76,7 +77,7 @@ def weather_card(icon, title, temp, indicator, width, height):
     while w_title > width - red_icon_layer.size[0]:
         title_size -= 1
 
-        font_title = ImageFont.truetype(root_path + 'fonts/Roboto-Light.ttf', title_size)
+        font_title = ImageFont.truetype(root_path + 'fonts/Roboto-Regular.ttf', title_size)
 
         w_title, h_title = font_title.getsize(title)
 
@@ -169,6 +170,76 @@ def sidebar(weather_data, width, height):
         (width / 2 - w_status / 2, height - 30),
         status_text,
         font=font_status, fill=255)
+
+    return red_layer, black_layer
+
+
+def progress_card(title, current, goal, width, height):
+    red_layer = Image.new('1', (width, height), 1)
+    black_layer = Image.new('1', (width, height), 1)
+
+    red_layer_draw = ImageDraw.Draw(red_layer)
+    black_layer_draw = ImageDraw.Draw(black_layer)
+
+    progress = current / goal
+
+    if progress < 1:
+        black_layer_draw.arc([3, 3, width - 3, height - 3], -90, progress * 360 - 90, fill=0, width=5)
+    elif progress < 2:
+        red_layer_draw.arc([3, 3, width - 3, height - 3], -90, progress * 360 - 90, fill=0, width=5)
+        black_layer_draw.arc([3, 3, width - 3, height - 3], progress * 360 - 90, 270, fill=0, width=5)
+    else:
+        red_layer_draw.arc([3, 3, width - 3, height - 3], -90, 270, fill=0, width=5)
+
+    title_size = 20
+    font_title = ImageFont.truetype(root_path + 'fonts/Roboto-Light.ttf', title_size)
+    w_title, h_title = font_title.getsize(title)
+
+    while w_title > width - 15:
+        title_size -= 1
+        font_title = ImageFont.truetype(root_path + 'fonts/Roboto-Light.ttf', title_size)
+        w_title, h_title = font_title.getsize(title)
+
+    x_title = width / 2 - w_title / 2
+    y_title = height / 8 * 3 - h_title / 2
+
+    black_layer_draw.text((x_title, y_title), title, font=font_title, fill=0)
+
+    black_layer_draw.line((10, height / 2 + 3, width - 10, height / 2 + 3), 0, 2)
+
+    subtitle = '{}:{:02d} / {}:{:02d}'.format(int(current / 3600), round(current % 3600 / 60), int(goal / 3600), round(goal % 3600 / 60))
+
+    subtitle_size = 15
+    font_subtitle = ImageFont.truetype(root_path + 'fonts/Roboto-Light.ttf', subtitle_size)
+    w_subtitle, h_subtitle = font_subtitle.getsize(subtitle)
+
+    while w_subtitle > width - 5:
+        subtitle_size -= 1
+        font_subtitle = ImageFont.truetype(root_path + 'fonts/Roboto-Light.ttf', subtitle_size)
+        w_subtitle, h_subtitle = font_subtitle.getsize(subtitle_size)
+
+    x_subtitle = width / 2 - w_subtitle / 2
+    y_subtitle = height / 8 * 5 - h_subtitle / 2
+
+    black_layer_draw.text((x_subtitle, y_subtitle), subtitle, font=font_subtitle, fill=0)
+
+    return red_layer, black_layer
+
+
+def progress_area(categories, width, height):
+    red_layer = Image.new('1', (width, height), 1)
+    black_layer = Image.new('1', (width, height), 1)
+
+    card_height = int(height / len(categories))
+    current_y = 0
+
+    for title, details in categories.items():
+        red_card_layer, black_card_layer = progress_card(title, details['current'], details['goal'], width, card_height)
+
+        red_layer.paste(red_card_layer, (0, current_y))
+        black_layer.paste(black_card_layer, (0, current_y))
+
+        current_y += card_height
 
     return red_layer, black_layer
 
@@ -380,9 +451,14 @@ def generator(data, path=''):
     red_layer.paste(red_card, (0, 0))
     black_layer.paste(black_card, (0, 0))
 
-    red_card, black_card = main_content(data, EPD_WIDTH - SIDEBAR_WIDTH, EPD_HEIGHT)
+    red_card, black_card = progress_area(data['toggl']['categories'], PROGRESS_WIDTH, EPD_HEIGHT)
     red_layer.paste(red_card, (SIDEBAR_WIDTH, 0))
     black_layer.paste(black_card, (SIDEBAR_WIDTH, 0))
+    black_card.save(root_path + 'test_black.bmp')
+
+    red_card, black_card = main_content(data, EPD_WIDTH - PROGRESS_WIDTH - SIDEBAR_WIDTH, EPD_HEIGHT)
+    red_layer.paste(red_card, (PROGRESS_WIDTH + SIDEBAR_WIDTH, 0))
+    black_layer.paste(black_card, (PROGRESS_WIDTH + SIDEBAR_WIDTH, 0))
 
     black_layer.save(root_path + 'black.bmp')
     red_layer.save(root_path + 'red.bmp')
