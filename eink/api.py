@@ -250,6 +250,64 @@ def trello():
     }
 
 
+@bp.route('/toggl')
+def toggl():
+    categories = {}
+
+    for name, details in current_app.config['TOGGL_CATEGORIES'].items():
+        categories[name] = {
+            'pid': details['pid'] if 'pid' in details else [],
+            'goal': details['goal'],
+            'current': 0
+        }
+
+        if 'wid' in details and len(details['wid']) > 0:
+            for wid in details['wid']:
+                r = requests.get(
+                    'https://www.toggl.com/api/v8/workspaces/{}/projects'.format(wid),
+                    auth=(current_app.config['TOGGL_TOKEN'], 'api_token')
+                )
+
+                if r.status_code != requests.codes.ok:
+                    return {
+                               'status': 'fail',
+                               'reason': 'HTTP Request Returns ' + str(r.status_code)
+                           }, r.status_code
+
+                categories[name]['pid'].extend([item['id'] for item in r.json()])
+
+    now = datetime.datetime.now(eastern)
+    start_date = eastern.localize(datetime.datetime(now.year, now.month, now.day, 0, 0, 0)).astimezone(utc)
+
+    r = requests.get(
+        'https://www.toggl.com/api/v8/time_entries',
+        params={'start_date': start_date.isoformat()},
+        auth=(current_app.config['TOGGL_TOKEN'], 'api_token')
+    )
+
+    if r.status_code != requests.codes.ok:
+        return {
+                   'status': 'fail',
+                   'reason': 'HTTP Request Returns ' + str(r.status_code)
+               }, r.status_code
+
+    for time_entry in r.json():
+        if 'stop' in time_entry:
+            duration = time_entry['duration']
+        else:
+            start_time = datetime.datetime.fromisoformat(time_entry['start'])
+            duration = int((now - start_time).total_seconds())
+
+        for _, category in categories.items():
+            if time_entry['pid'] in category['pid']:
+                category['current'] += duration
+
+    return {
+        'status': 'success',
+        'categories': categories
+    }
+
+
 @bp.route('/refresh')
 def refresh():
     data_points = [
