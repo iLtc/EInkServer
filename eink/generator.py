@@ -186,8 +186,8 @@ def progress_card(title, current, goal, width, height):
     if progress < 1:
         black_layer_draw.arc([3, 3, width - 3, height - 3], -90, progress * 360 - 90, fill=0, width=5)
     elif progress < 2:
-        red_layer_draw.arc([3, 3, width - 3, height - 3], -90, progress * 360 - 90, fill=0, width=5)
-        black_layer_draw.arc([3, 3, width - 3, height - 3], progress * 360 - 90, 270, fill=0, width=5)
+        red_layer_draw.arc([3, 3, width - 3, height - 3], -90, (progress - 1) * 360 - 90, fill=0, width=5)
+        black_layer_draw.arc([3, 3, width - 3, height - 3], (progress - 1) * 360 - 90, 270, fill=0, width=5)
     else:
         red_layer_draw.arc([3, 3, width - 3, height - 3], -90, 270, fill=0, width=5)
 
