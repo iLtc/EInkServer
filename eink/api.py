@@ -65,6 +65,22 @@ def weather():
 @bp.route('/habitica')
 def habitica():
     r = requests.get(
+        'https://habitica.com/api/v3/user',
+        headers={
+            'x-api-user': current_app.config['HABITICA_USERID'],
+            'x-api-key': current_app.config['HABITICA_TOKEN']
+        }
+    )
+
+    if r.status_code != requests.codes.ok:
+        return {
+                   'status': 'fail',
+                   'reason': 'HTTP Request Returns ' + str(r.status_code)
+               }, r.status_code
+
+    tasks_order = r.json()['data']['tasksOrder']
+
+    r = requests.get(
         'https://habitica.com/api/v3/tasks/user',
         headers={
             'x-api-user': current_app.config['HABITICA_USERID'],
@@ -72,26 +88,27 @@ def habitica():
         }
     )
 
-    if r.status_code == requests.codes.ok:
-        old_data = r.json()['data']
+    if r.status_code != requests.codes.ok:
+        return {
+                   'status': 'fail',
+                   'reason': 'HTTP Request Returns ' + str(r.status_code)
+               }, r.status_code
 
-        data = [{
-            'type': temp['type'],
-            'isDue': temp['isDue'],
-            'completed': temp['completed'],
-            'text': temp['text']
-        } for temp in old_data if temp['type'] == 'daily']
+    old_data = r.json()['data']
 
-        results = {
-            'status': 'success',
-            'data': data
-        }
+    data = {temp['id']: {
+        'type': temp['type'],
+        'isDue': temp['isDue'],
+        'completed': temp['completed'],
+        'text': temp['text']
+    } for temp in old_data if temp['type'] == 'daily'}
 
-    else:
-        results = {
-                      'status': 'fail',
-                      'reason': 'HTTP Request Returns ' + str(r.status_code)
-                  }, r.status_code
+    sorted_data = [data[id_] for id_ in tasks_order['dailys']]
+
+    results = {
+        'status': 'success',
+        'data': sorted_data
+    }
 
     return results
 
