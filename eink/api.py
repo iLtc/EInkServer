@@ -299,7 +299,7 @@ def toggl():
             duration = int((now - start_time).total_seconds())
 
         for _, category in categories.items():
-            if time_entry['pid'] in category['pid']:
+            if 'pid' in time_entry and time_entry['pid'] in category['pid']:
                 category['current'] += duration
 
     return {
