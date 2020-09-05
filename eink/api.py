@@ -183,7 +183,7 @@ def omnifocus_update():
     except:
         return {
                    'status': 'failed',
-                   'reason': 'Update to load json data'
+                   'reason': 'Unable to load json data'
                }, 400
 
     # TODO: Remove deleted tasks
@@ -221,7 +221,7 @@ def omnifocus_update_new():
     except:
         return {
                    'status': 'failed',
-                   'reason': 'Update to load json data'
+                   'reason': 'Unable to load json data'
                }, 400
 
     Task.query.delete()
