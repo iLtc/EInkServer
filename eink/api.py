@@ -10,6 +10,7 @@ from .models import db, Task
 import json
 from . import generator
 import sys
+import urllib.parse
 
 bp = Blueprint('api', __name__, url_prefix='/api')
 
@@ -217,7 +218,7 @@ def omnifocus_update_new():
                }, 400
 
     try:
-        data = json.loads(request.form['data'])
+        data = json.loads(urllib.parse.unquote(request.form['data']))
     except:
         return {
                    'status': 'failed',
