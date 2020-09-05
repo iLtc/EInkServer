@@ -175,7 +175,7 @@ def omnifocus_update():
     if data == '':
         return {
                    'status': 'failed',
-                   'reason': 'Miss data'
+                   'reason': 'Missing data'
                }, 400
 
     try:
@@ -202,6 +202,37 @@ def omnifocus_update():
             new_obj = Task(**task)
 
             db.session.add(new_obj)
+
+    db.session.commit()
+
+    return {'status': 'success'}
+
+
+@bp.route('/omnifocus/update', methods=['POST'])
+def omnifocus_update_new():
+    if 'data' not in request.form or request.form['data'] == '':
+        return {
+                   'status': 'failed',
+                   'reason': 'Missing data'
+               }, 400
+
+    try:
+        data = json.loads(request.form['data'])
+    except:
+        return {
+                   'status': 'failed',
+                   'reason': 'Update to load json data'
+               }, 400
+
+    Task.query.delete()
+
+    for task in data:
+        if task['dueDate']:
+            task['dueDate'] = utc.localize(datetime.datetime.strptime(task['dueDate'], '%Y-%m-%dT%H:%M:%S.%fZ'))
+
+        new_obj = Task(**task)
+
+        db.session.add(new_obj)
 
     db.session.commit()
 
