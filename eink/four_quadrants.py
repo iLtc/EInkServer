@@ -1,6 +1,7 @@
 from .generator import progress_area, debug, calendar_prepare, task_prepare, habitica_prepare, set_root_path
 from pytz import timezone, utc
 from PIL import Image, ImageDraw, ImageFont
+import datetime
 
 EPD_WIDTH = 800
 EPD_HEIGHT = 480
@@ -244,6 +245,15 @@ def generator(data, path=''):
     red_card, black_card = main_content(data, EPD_WIDTH - int(EPD_HEIGHT / len(data['toggl']['categories'])) - 2, EPD_HEIGHT)
     red_layer.paste(red_card, (int(EPD_HEIGHT / len(data['toggl']['categories'])) + 2, 0))
     black_layer.paste(black_card, (int(EPD_HEIGHT / len(data['toggl']['categories'])) + 2, 0))
+
+    status_text = datetime.datetime.now(eastern).strftime('%H:%M:%S')
+    font_time = ImageFont.truetype(root_path + 'fonts/Roboto-Light.ttf', 15)
+    w_status, h_status = font_time.getsize(status_text)
+
+    black_layer_draw.text(
+        (int(EPD_HEIGHT / len(data['toggl']['categories'])) / 2 - w_status / 2, EPD_HEIGHT - 20),
+        status_text,
+        font=font_time, fill=0)
 
     black_layer.save(root_path + 'black.bmp')
     red_layer.save(root_path + 'red.bmp')
