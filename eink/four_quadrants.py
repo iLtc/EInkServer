@@ -22,7 +22,7 @@ def quadrant_card(items, width, height):
     red_layer_draw = ImageDraw.Draw(red_layer)
     black_layer_draw = ImageDraw.Draw(black_layer)
 
-    font = ImageFont.truetype(root_path + 'fonts/timr45w.ttf', 17)
+    font = ImageFont.truetype(root_path + 'fonts/Roboto-Light.ttf', 17)
     h_offset = -8
 
     if len(items) == 0:
@@ -88,7 +88,7 @@ def quadrant_card(items, width, height):
         if height - h_offset > h:
             black_layer_draw.line((0, h_offset, width, h_offset), 0, 1)
 
-        h_offset += -6
+        h_offset += -8
 
         if h_offset + 2.5 * h >= height and len(items) - count > 1:
             text = 'And {} more ...'.format(len(items) - count)
