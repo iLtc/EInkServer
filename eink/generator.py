@@ -259,7 +259,9 @@ def calendar_prepare(events):
             'main_red': True if now >= start else False,
             'right': '[{}]'.format(event['calendar']),
             'right_red': False,
-            'type': 'calendar'
+            'type': 'calendar',
+            'important': event['important'],
+            'urgent': True if start <= (now + datetime.timedelta(hours=3)) else False
         })
 
     return items
@@ -315,7 +317,9 @@ def task_prepare(tasks):
             'main_red': False,
             'right': '[{}]'.format('Inbox' if task['inInbox'] else task['containingProjectName']),
             'right_red': False,
-            'type': 'task'
+            'type': 'task',
+            'important': task['flagged'],
+            'urgent': True if due is not None and due <= (now + datetime.timedelta(hours=3)) else False
         })
 
     return items
@@ -336,7 +340,9 @@ def habitica_prepare(tasks):
             'main_red': False,
             'right': '[Habitica]',
             'right_red': False,
-            'type': 'habitica'
+            'type': 'habitica',
+            'important': False,
+            'urgent': False
         })
 
     return items
@@ -465,6 +471,11 @@ def generator(data, path=''):
     debug(red_layer, black_layer, save=True)
 
     return True
+
+
+def set_root_path(path):
+    global root_path
+    root_path = path
 
 
 if __name__ == '__main__':

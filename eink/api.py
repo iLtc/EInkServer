@@ -9,6 +9,7 @@ from pytz import timezone, utc
 from .models import db, Task
 import json
 from . import generator
+from . import four_quadrants
 import sys
 import urllib.parse
 
@@ -358,7 +359,9 @@ def toggl():
 
 
 @bp.route('/refresh')
-def refresh():
+def refresh(debug=False):
+    is_four = True if request.args.get('four', None) is not None else False
+
     data_points = [
         {'name': 'weather', 'method': weather},
         {'name': 'habitica', 'method': habitica},
@@ -380,13 +383,24 @@ def refresh():
                                                                          data[point['name']][0]['reason'])
                    }, 500
 
-    try:
-        generator.generator(data, current_app.root_path + '/')
-    except:
-        return {
-                   'status': 'failed',
-                   'reason': 'Failed to refresh: ' + str(sys.exc_info()[1])
-               }, 500
+    if debug:
+        if is_four:
+            four_quadrants.generator(data, current_app.root_path + '/')
+        else:
+            generator.generator(data, current_app.root_path + '/')
+
+    else:
+        try:
+            if is_four:
+                four_quadrants.generator(data, current_app.root_path + '/')
+            else:
+                generator.generator(data, current_app.root_path + '/')
+
+        except:
+            return {
+                       'status': 'failed',
+                       'reason': 'Failed to refresh: ' + str(sys.exc_info()[1])
+                   }, 500
 
     return {
         'status': 'success'
@@ -398,9 +412,10 @@ def refresh():
 def static():
     return send_file(request.path.split('/')[2])
 
+
 @bp.route('/debug.bmp')
 def debug():
-    result = refresh()
+    result = refresh(debug=True)
 
     if type(result) == tuple:
         return {
