@@ -23,13 +23,15 @@ def today_card(width, height):
     red_layer_draw = ImageDraw.Draw(red_layer)
     black_layer_draw = ImageDraw.Draw(black_layer)
 
+    black_layer_draw.rectangle((0, 0, width, height), 0)
+
     week_day_name = now.strftime("%A")
     day_number = now.strftime("%d")
     month_year_str = now.strftime("%b") + ' ' + now.strftime("%Y")
 
-    font_week_day_name = ImageFont.truetype(root_path + 'fonts/Roboto-Regular.ttf', 40)
-    font_day_number = ImageFont.truetype(root_path + 'fonts/Roboto-Black.ttf', 110)
-    font_month_year_str = ImageFont.truetype(root_path + 'fonts/Roboto-Regular.ttf', 40)
+    font_week_day_name = ImageFont.truetype(root_path + 'fonts/Roboto-Regular.ttf', 20)
+    font_day_number = ImageFont.truetype(root_path + 'fonts/Roboto-Black.ttf', 80)
+    font_month_year_str = ImageFont.truetype(root_path + 'fonts/Roboto-Regular.ttf', 20)
 
     w_week_day_name, h_week_day_name = font_week_day_name.getsize(week_day_name)
     x_week_day_name = (width / 2) - (w_week_day_name / 2)
@@ -40,10 +42,10 @@ def today_card(width, height):
     w_month_year_str, h_month_year_str = font_month_year_str.getsize(month_year_str)
     x_month_year_str = (width / 2) - (w_month_year_str / 2)
 
-    black_layer_draw.text((x_week_day_name, 5), week_day_name, font=font_week_day_name, fill=0)
-    black_layer_draw.text((x_day_number, 40), day_number, font=font_day_number, fill=0)
-    red_layer_draw.text((x_day_number, 40), day_number, font=font_day_number, fill=0)
-    black_layer_draw.text((x_month_year_str, 150), month_year_str, font=font_month_year_str, fill=0)
+    black_layer_draw.text((x_week_day_name, 5), week_day_name, font=font_week_day_name, fill=1)
+    black_layer_draw.text((x_day_number, 20), day_number, font=font_day_number, fill=1)
+    red_layer_draw.text((x_day_number, 20), day_number, font=font_day_number, fill=0)
+    black_layer_draw.text((x_month_year_str, 100), month_year_str, font=font_month_year_str, fill=1)
 
     return red_layer, black_layer
 
@@ -104,7 +106,7 @@ def weather_card(icon, title, temp, indicator, width, height):
     return red_layer, black_layer
 
 
-def sidebar(weather_data, width, height):
+def sidebar(weather_data, width, height, show_weather=True):
     red_layer = Image.new('1', (width, height), 1)
     black_layer = Image.new('1', (width, height), 1)
 
@@ -113,63 +115,77 @@ def sidebar(weather_data, width, height):
 
     now = datetime.datetime.now(eastern)
 
-    red_card, black_card = today_card(width, 200)
+    red_card, black_card = today_card(width, 125)
 
     red_layer.paste(red_card, (0, 0))
     black_layer.paste(black_card, (0, 0))
 
-    current = weather_data['current']
-
-    red_card, black_card = weather_card(
-        current['weather'][0]['icon'],
-        current['weather'][0]['description'].title(),
-        '{} °F / {} °F'.format(round(current['feels_like']), round(current['temp'])),
-        'Now',
-        width,
-        120
-    )
-
-    red_layer.paste(red_card, (0, 200))
-    black_layer.paste(black_card, (0, 200))
-
-    if now.hour < 19:
-        today = weather_data['today']
+    if show_weather:
+        current = weather_data['current']
 
         red_card, black_card = weather_card(
-            today['weather'][0]['icon'],
-            today['weather'][0]['description'].title(),
-            '{} °F / {} °F'.format(round(today['temp']['min']), round(today['temp']['max'])),
-            'Today',
+            current['weather'][0]['icon'],
+            current['weather'][0]['description'].title(),
+            '{} °F / {} °F'.format(round(current['feels_like']), round(current['temp'])),
+            'Now',
             width,
             120
         )
+
+        red_layer.paste(red_card, (0, 160))
+        black_layer.paste(black_card, (0, 160))
+
+        if now.hour < 19:
+            today = weather_data['today']
+
+            red_card, black_card = weather_card(
+                today['weather'][0]['icon'],
+                today['weather'][0]['description'].title(),
+                '{} °F / {} °F'.format(round(today['temp']['min']), round(today['temp']['max'])),
+                'Today',
+                width,
+                120
+            )
+
+        else:
+            tomorrow = weather_data['tomorrow']
+
+            red_card, black_card = weather_card(
+                tomorrow['weather'][0]['icon'],
+                tomorrow['weather'][0]['description'].title(),
+                '{} °F / {} °F'.format(round(tomorrow['temp']['min']), round(tomorrow['temp']['max'])),
+                'Tomorrow',
+                width,
+                120
+            )
+
+        red_layer.paste(red_card, (0, 280))
+        black_layer.paste(black_card, (0, 280))
+
+        black_layer_draw.rectangle((0, 400, width, height), 0)
+
+        font_status = ImageFont.truetype(root_path + 'fonts/Roboto-Light.ttf', 18)
+
+        status_text = 'Updated: ' + now.strftime('%H:%M:%S')
+        w_status, h_status = font_status.getsize(status_text)
+
+        black_layer_draw.text(
+            (width / 2 - w_status / 2, height - 30),
+            status_text,
+            font=font_status, fill=255)
 
     else:
-        tomorrow = weather_data['tomorrow']
+        black_layer_draw.rectangle((0, 770, width, height), 0)
 
-        red_card, black_card = weather_card(
-            tomorrow['weather'][0]['icon'],
-            tomorrow['weather'][0]['description'].title(),
-            '{} °F / {} °F'.format(round(tomorrow['temp']['min']), round(tomorrow['temp']['max'])),
-            'Tomorrow',
-            width,
-            120
-        )
+        font_status = ImageFont.truetype(root_path + 'fonts/Roboto-Light.ttf', 12)
 
-    red_layer.paste(red_card, (0, 320))
-    black_layer.paste(black_card, (0, 320))
+        status_text = 'Updated: ' + now.strftime('%H:%M:%S')
+        w_status, h_status = font_status.getsize(status_text)
 
-    black_layer_draw.rectangle((0, 440, width, height), 0)
-
-    font_status = ImageFont.truetype(root_path + 'fonts/Roboto-Light.ttf', 18)
-
-    status_text = 'Updated: ' + now.strftime('%H:%M:%S')
-    w_status, h_status = font_status.getsize(status_text)
-
-    black_layer_draw.text(
-        (width / 2 - w_status / 2, height - 30),
-        status_text,
-        font=font_status, fill=255)
+        black_layer_draw.text(
+            (width / 2 - w_status / 2, height - 20),
+            status_text,
+            font=font_status, fill=255)
 
     return red_layer, black_layer
 
@@ -348,8 +364,63 @@ def habitica_prepare(tasks):
     return items
 
 
-def main_content(data, width, height):
-    items = calendar_prepare(data['calendar']['events'])
+def main_content(data, width, height, show_weather=False):
+    items = []
+
+    if show_weather:
+        current = data['weather']['current']
+
+        items.append({
+            'left': 'Now: ',
+            'left_red': False,
+            'main': "{} {} °F / {} °F".format(
+                current['weather'][0]['description'].title(),
+                round(current['feels_like']),
+                round(current['temp'])),
+            'main_red': False,
+            'right': '',
+            'right_red': False,
+            'type': 'weather',
+            'important': False,
+            'urgent': False
+        })
+
+        now = datetime.datetime.now(eastern)
+
+        if now.hour < 19:
+            today = data['weather']['today']
+
+            items.append({
+                'left': 'Today: ',
+                'left_red': False,
+                'main': "{} {} °F / {} °F".format(
+                    today['weather'][0]['description'].title(),
+                    round(today['temp']['min']), round(today['temp']['max'])),
+                'main_red': False,
+                'right': '',
+                'right_red': False,
+                'type': 'weather',
+                'important': False,
+                'urgent': False
+            })
+
+        else:
+            tomorrow = data['weather']['tomorrow']
+
+            items.append({
+                'left': 'Today: ',
+                'left_red': False,
+                'main': "{} {} °F / {} °F".format(
+                    tomorrow['weather'][0]['description'].title(),
+                    round(tomorrow['temp']['min']), round(tomorrow['temp']['max'])),
+                'main_red': False,
+                'right': '',
+                'right_red': False,
+                'type': 'weather',
+                'important': False,
+                'urgent': False
+            })
+    items += calendar_prepare(data['calendar']['events'])
     items += trello_prepare(data['trello']['cards'])
     items += task_prepare(data['omnifocus']['tasks'])
     items += habitica_prepare(data['habitica']['data'])
@@ -446,25 +517,48 @@ def debug(red_image, black_image, save=False, show=False):
         debug_image.show()
 
 
-def generator(data, path=''):
+def generator(data, path='', horizontal=True, rotate=True):
     global root_path
     root_path = path
 
-    red_layer = Image.new('1', (EPD_WIDTH, EPD_HEIGHT), 1)
-    black_layer = Image.new('1', (EPD_WIDTH, EPD_HEIGHT), 1)
+    if horizontal:
+        red_layer = Image.new('1', (EPD_WIDTH, EPD_HEIGHT), 1)
+        black_layer = Image.new('1', (EPD_WIDTH, EPD_HEIGHT), 1)
 
-    red_card, black_card = sidebar(data['weather'], SIDEBAR_WIDTH, EPD_HEIGHT)
-    red_layer.paste(red_card, (0, 0))
-    black_layer.paste(black_card, (0, 0))
+        red_card, black_card = sidebar(data['weather'], SIDEBAR_WIDTH, EPD_HEIGHT)
+        red_layer.paste(red_card, (0, 0))
+        black_layer.paste(black_card, (0, 0))
 
-    red_card, black_card = progress_area(data['toggl']['categories'], PROGRESS_WIDTH, EPD_HEIGHT)
-    red_layer.paste(red_card, (SIDEBAR_WIDTH, 0))
-    black_layer.paste(black_card, (SIDEBAR_WIDTH, 0))
-    black_card.save(root_path + 'test_black.bmp')
+        red_card, black_card = progress_area(data['toggl']['categories'], PROGRESS_WIDTH, EPD_HEIGHT)
+        red_layer.paste(red_card, (SIDEBAR_WIDTH, 0))
+        black_layer.paste(black_card, (SIDEBAR_WIDTH, 0))
 
-    red_card, black_card = main_content(data, EPD_WIDTH - PROGRESS_WIDTH - SIDEBAR_WIDTH, EPD_HEIGHT)
-    red_layer.paste(red_card, (PROGRESS_WIDTH + SIDEBAR_WIDTH, 0))
-    black_layer.paste(black_card, (PROGRESS_WIDTH + SIDEBAR_WIDTH, 0))
+        red_card, black_card = main_content(data, EPD_WIDTH - PROGRESS_WIDTH - SIDEBAR_WIDTH, EPD_HEIGHT)
+        red_layer.paste(red_card, (PROGRESS_WIDTH + SIDEBAR_WIDTH, 0))
+        black_layer.paste(black_card, (PROGRESS_WIDTH + SIDEBAR_WIDTH, 0))
+
+    else:
+        red_layer = Image.new('1', (EPD_WIDTH, EPD_WIDTH), 1)
+        black_layer = Image.new('1', (EPD_WIDTH, EPD_WIDTH), 1)
+        black_layer_draw = ImageDraw.Draw(black_layer)
+
+        red_card, black_card = sidebar(data['weather'], 100, EPD_WIDTH, False)
+        red_layer.paste(red_card, (0, 0))
+        black_layer.paste(black_card, (0, 0))
+
+        red_card, black_card = progress_area(data['toggl']['categories'], 100, 500)
+        red_layer.paste(red_card, (0, 125))
+        black_layer.paste(black_card, (0, 125))
+
+        black_layer_draw.line((100, 0, 100, EPD_WIDTH), 0, 3)
+
+        red_card, black_card = main_content(data, EPD_HEIGHT - 103, EPD_WIDTH, show_weather=True)
+        red_layer.paste(red_card, (103, 0))
+        black_layer.paste(black_card, (103, 0))
+
+        if rotate:
+            black_layer = black_layer.rotate(90).crop((0, EPD_WIDTH - EPD_HEIGHT, EPD_WIDTH, EPD_WIDTH))
+            red_layer = red_layer.rotate(90).crop((0, EPD_WIDTH - EPD_HEIGHT, EPD_WIDTH, EPD_WIDTH))
 
     black_layer.save(root_path + 'black.bmp')
     red_layer.save(root_path + 'red.bmp')

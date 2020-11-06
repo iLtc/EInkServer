@@ -360,7 +360,9 @@ def toggl():
 
 @bp.route('/refresh')
 def refresh(debug=False):
-    is_four = True if request.args.get('four', None) is not None else False
+    is_four = request.args.get('four', None) is not None
+    is_horizontal = request.args.get('horizontal', None) is None
+    is_rotate = request.args.get('rotate', None) is None
 
     data_points = [
         {'name': 'weather', 'method': weather},
@@ -387,14 +389,14 @@ def refresh(debug=False):
         if is_four:
             four_quadrants.generator(data, current_app.root_path + '/')
         else:
-            generator.generator(data, current_app.root_path + '/')
+            generator.generator(data, current_app.root_path + '/', is_horizontal, is_rotate)
 
     else:
         try:
             if is_four:
                 four_quadrants.generator(data, current_app.root_path + '/')
             else:
-                generator.generator(data, current_app.root_path + '/')
+                generator.generator(data, current_app.root_path + '/', is_horizontal, is_rotate)
 
         except:
             return {
