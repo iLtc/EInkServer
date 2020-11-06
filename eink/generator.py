@@ -371,7 +371,7 @@ def main_content(data, width, height, show_weather=False):
         current = data['weather']['current']
 
         items.append({
-            'left': 'Now: ',
+            'left': '[NOW] ',
             'left_red': False,
             'main': "{} {} °F / {} °F".format(
                 current['weather'][0]['description'].title(),
@@ -391,7 +391,7 @@ def main_content(data, width, height, show_weather=False):
             today = data['weather']['today']
 
             items.append({
-                'left': 'Today: ',
+                'left': '[TDY] ',
                 'left_red': False,
                 'main': "{} {} °F / {} °F".format(
                     today['weather'][0]['description'].title(),
@@ -408,7 +408,7 @@ def main_content(data, width, height, show_weather=False):
             tomorrow = data['weather']['tomorrow']
 
             items.append({
-                'left': 'Today: ',
+                'left': '[TMW] ',
                 'left_red': False,
                 'main': "{} {} °F / {} °F".format(
                     tomorrow['weather'][0]['description'].title(),
@@ -546,7 +546,7 @@ def generator(data, path='', horizontal=True, rotate=True):
         red_layer.paste(red_card, (0, 0))
         black_layer.paste(black_card, (0, 0))
 
-        red_card, black_card = progress_area(data['toggl']['categories'], 100, 500)
+        red_card, black_card = progress_area(data['toggl']['categories'], 100, 100 * len(data['toggl']['categories']))
         red_layer.paste(red_card, (0, 125))
         black_layer.paste(black_card, (0, 125))
 
