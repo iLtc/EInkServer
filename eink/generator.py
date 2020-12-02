@@ -308,7 +308,7 @@ def task_prepare(tasks):
     items = []
 
     for task in tasks:
-        due = None if task['dueDate'] == '' else datetime.datetime.strptime(task['dueDate'], '%Y-%m-%dT%H:%M:%S').astimezone(eastern)
+        due = None if task['dueDate'] == '' else utc.localize(datetime.datetime.strptime(task['dueDate'], '%Y-%m-%dT%H:%M:%S')).astimezone(eastern)
 
         if due is None:
             left_string = ''
@@ -331,7 +331,7 @@ def task_prepare(tasks):
             'left_red': left_red,
             'main': task['name'],
             'main_red': False,
-            'right': '[{}]'.format('Inbox' if task['inInbox'] else task['containingProjectName']),
+            'right': '[{}]'.format('Inbox' if task['inInbox'] else task['project']),
             'right_red': False,
             'type': 'task',
             'important': task['flagged'],

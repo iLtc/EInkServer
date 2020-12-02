@@ -170,90 +170,39 @@ def calendar():
     }
 
 
-@bp.route('/omnifocus/update')
-def omnifocus_update():
-    data = request.args.get('data', '')
-
-    if data == '':
-        return {
-                   'status': 'failed',
-                   'reason': 'Missing data'
-               }, 400
-
-    try:
-        data = json.loads(data)
-    except:
-        return {
-                   'status': 'failed',
-                   'reason': 'Unable to load json data'
-               }, 400
-
-    # TODO: Remove deleted tasks
-
-    for task in data:
-        if task['dueDate']:
-            task['dueDate'] = utc.localize(datetime.datetime.strptime(task['dueDate'], '%Y-%m-%dT%H:%M:%S.%fZ'))
-
-        obj = Task.query.filter_by(task_id=task['task_id']).first()
-
-        if obj:
-            for key, val in task.items():
-                if getattr(obj, key) != val:
-                    setattr(obj, key, val)
-        else:
-            new_obj = Task(**task)
-
-            db.session.add(new_obj)
-
-    db.session.commit()
-
-    return {'status': 'success'}
-
-
-@bp.route('/omnifocus/update', methods=['POST'])
-def omnifocus_update_new():
-    if 'data' not in request.form or request.form['data'] == '':
-        return {
-                   'status': 'failed',
-                   'reason': 'Missing data'
-               }, 400
-
-    try:
-        data = json.loads(urllib.parse.unquote(request.form['data']))
-    except:
-        return {
-                   'status': 'failed',
-                   'reason': 'Unable to load json data'
-               }, 400
-
-    Task.query.delete()
-
-    for task in data:
-        if task['dueDate']:
-            task['dueDate'] = utc.localize(datetime.datetime.strptime(task['dueDate'], '%Y-%m-%dT%H:%M:%S.%fZ'))
-
-        new_obj = Task(**task)
-
-        db.session.add(new_obj)
-
-    db.session.commit()
-
-    return {'status': 'success'}
-
-
 @bp.route('/omnifocus')
 def omnifocus():
     now = datetime.datetime.now(eastern)
     today = eastern.localize(datetime.datetime(now.year, now.month, now.day, 23, 59, 59)).astimezone(utc)
 
-    tasks = Task.query \
-        .filter(Task.active == True, Task.completed == False, Task.taskStatus != 'Completed') \
-        .filter(db.or_(Task.flagged == True, Task.inInbox == True, Task.dueDate <= today)).all()
+    start = now.astimezone(utc).isoformat().replace("+00:00", "")
+    end = today.isoformat().replace("+00:00", "")
+
+    url = "https://tasks.iltc.app/api/tasks?start={}&end={}".format(start, end)
+
+    headers = {
+        'Authorization': 'Bearer ' + current_app.config['TASKS_SERVER_TOKEN']
+    }
+
+    r = requests.get(url, headers=headers)
+
+    if r.status_code != requests.codes.ok:
+        return {
+                   'status': 'fail',
+                   'reason': 'HTTP Request Returns ' + str(r.status_code)
+               }, r.status_code
+
+    data = r.json()
 
     results = []
 
-    for task in tasks:
-        results.append(task.to_dict())
+    for task in data:
+        if task['active'] == 0 or task['completed'] == 1 or task['taskStatus'] == 'Completed':
+            continue
+
+        task['dueDate'] = task['dueDate'].replace(".000000Z", "")
+
+        results.append(task)
 
     results.sort(key=lambda e: e['dueDate'])
 
