@@ -199,6 +199,9 @@ def omnifocus():
     for task in data:
         if task['active'] == 0 or task['completed'] == 1 or task['taskStatus'] == 'Completed':
             continue
+            
+        if task['dueDate'] is None:
+            task['dueDate'] = ''
 
         task['dueDate'] = task['dueDate'].replace(".000000Z", "")
 
